@@ -136,12 +136,18 @@ class GUI():
             """
             r = []
             rdf = algorithm(df, x.get(), self.categories_var.get())
+
+            content = ""
+
             for i in range(min(x.get(), len(rdf.index))):
                 r_str = f'{rdf.iloc[i,1][:30]},   {rdf.iloc[i,7]},   {rdf.iloc[i,5]} reviews\n'
                 r.append(r_str)
+                content += f'{rdf.iloc[i,2]} ::: {rdf.iloc[i,1]}\n'
 
             self.output_var.set(r)
-            messenger.send("hereo")
+
+            messenger.send(content)
+
             return rdf
 
         def on_output_csv(*args):
