@@ -2,6 +2,7 @@ from sys import argv
 import pandas as pd
 from tkinter import *
 from tkinter import ttk
+import json
 from messaging_service import Messenger
 
 
@@ -82,20 +83,19 @@ def algorithm(df, x, category):
 
 
 def output_csv(df, args):
-        """
-        Outputs the top x toys to output.csv
-        """
-        with open('output.csv', 'w') as outfile:
-            for header in headers[:-1]:
-                outfile.write(f'{header},')
-            outfile.write(f'{headers[-1]}\n')
+    """
+    Outputs the top x toys to output.csv
+    """
+    with open('output.csv', 'w') as outfile:
+        for header in headers[:-1]:
+            outfile.write(f'{header},')
+        outfile.write(f'{headers[-1]}\n')
 
-            for i in range(min(len(df.index), int(args["input_number_to_generate"]))):
-                outfile.write(
-                    f'{args["input_item_type"]},{args["input_item_category"]},{args["input_number_to_generate"]},{df.iloc[i,1]},{df.iloc[i,7]},{df.iloc[i,5]}\n')
-                
-            print("Output data now in output.csv")
+        for i in range(min(len(df.index), int(args["input_number_to_generate"]))):
+            outfile.write(
+                f'{args["input_item_type"]},{args["input_item_category"]},{args["input_number_to_generate"]},{df.iloc[i,1]},{df.iloc[i,7]},{df.iloc[i,5]}\n')
 
+        print("Output data now in output.csv")
 
 
 def csv_service():
@@ -116,7 +116,7 @@ def csv_service():
             for i in range(len(items)):
                 obj[headers[i]] = items[i]
 
-        return obj    
+        return obj
 
     obj = get_csv_input(input_file_name)
     rdf = algorithm(
@@ -137,16 +137,15 @@ class GUI():
             r = []
             rdf = algorithm(df, x.get(), self.categories_var.get())
 
-            content = ""
-
+            content = []
             for i in range(min(x.get(), len(rdf.index))):
                 r_str = f'{rdf.iloc[i,1][:30]},   {rdf.iloc[i,7]},   {rdf.iloc[i,5]} reviews\n'
                 r.append(r_str)
-                content += f'{rdf.iloc[i,2]} ::: {rdf.iloc[i,1]}\n'
+                content.append(
+                    {"name": rdf.iloc[i, 1], "manufacturer": rdf.iloc[i, 2]})
 
             self.output_var.set(r)
-
-            messenger.send(content)
+            self.output_var_list = content
 
             return rdf
 
@@ -160,7 +159,12 @@ class GUI():
 
         # def end_messaging():
         #     # messenger.end_threads()
-        #     root.destroy()  
+        #     root.destroy()
+
+        def on_toy_selection(param):
+            # print(output_listbox.curselection())
+            obj = self.output_var_list[int(param[0])]
+            messenger.send(json.dumps(obj))
 
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
         mainframe = ttk.Frame(root, padding="10 10 10 10")
@@ -175,7 +179,6 @@ class GUI():
             *categories)
         category_menu.grid(column=0, row=1, sticky=W)
 
-
         # x is the number of items to generate.
         label = ttk.Label(mainframe, text='Number of toys to output:').grid(
             column=1, row=1)
@@ -189,12 +192,14 @@ class GUI():
 
         # button calls on_generate() when pressed.
         ttk.Button(mainframe, text="Output to output.csv", command=on_output_csv).grid(
-            column=1, row=2, columnspan=2)    
+            column=1, row=2, columnspan=2)
 
         # output_listbox lists the output.
         self.output_var = StringVar(value=[])
-        output_listbox = Listbox(mainframe, listvariable=self.output_var, width=74).grid(
-            column=0, row=3, columnspan=3)
+        output_listbox = Listbox(
+            mainframe, listvariable=self.output_var, width=74)
+        output_listbox.grid(column=0, row=3, columnspan=3)
+        output_listbox.bind("<<ListboxSelect>>", lambda e: on_toy_selection(output_listbox.curselection()))
 
         # set the padding for each component to 5.
         for child in mainframe.winfo_children():

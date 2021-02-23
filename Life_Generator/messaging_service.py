@@ -45,13 +45,13 @@ class Reciever(threading.Thread):
             pika.ConnectionParameters(host='localhost'))
         self._channel = connection.channel()
 
-        self._channel.queue_declare(queue='channel_1')
+        self._channel.queue_declare(queue='channel_2')
 
         def callback(ch, method, properties, body):
-            print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
+            print(f' [x] Received "{body.decode("UTF-8")}" in channel_2')
 
         self._channel.basic_consume(
-            queue='channel_1', on_message_callback=self._on_recieve, auto_ack=True)
+            queue='channel_2', on_message_callback=self._on_recieve, auto_ack=True)
 
         print('RabbitMQ READY.')
         self._channel.start_consuming()
