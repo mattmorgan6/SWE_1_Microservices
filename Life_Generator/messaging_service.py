@@ -33,6 +33,10 @@ class Sender(threading.Thread):
 
 
 class Reciever(threading.Thread):
+ 
+    def set_on_recieve(self, callback_func):
+        self._on_recieve = callback_func
+
     def run(self):
         """
         Create a thread to recieve messages on. Setup RabbitMQ.
@@ -47,7 +51,7 @@ class Reciever(threading.Thread):
             print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
 
         self._channel.basic_consume(
-            queue='channel_1', on_message_callback=callback, auto_ack=True)
+            queue='channel_1', on_message_callback=self._on_recieve, auto_ack=True)
 
         print('RabbitMQ READY.')
         self._channel.start_consuming()
@@ -69,6 +73,12 @@ class Messenger():
         """
         self._reciever = Reciever()
         self._sender = Sender()
+
+        def printMessage(ch, method, properties, body):
+            print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
+
+        self._reciever.set_on_recieve(printMessage)
+
         self._reciever.start()
         self._sender.start()
 
@@ -87,8 +97,6 @@ class Messenger():
         
 
 
-
-
 def main():
     """
     Use for testing out this Messenger class interface.
@@ -105,7 +113,7 @@ def main():
             break
 
         if line == "send":
-            messager.send("heyo worldo")
+            messager.send("hello world")
 
 
 if __name__ == '__main__':
