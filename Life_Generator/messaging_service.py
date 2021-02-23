@@ -17,13 +17,13 @@ class Sender(threading.Thread):
         self._channel = self._connection.channel()
         self._channel.queue_declare(queue='channel_1')
 
-    def send(self):
+    def send(self, content):
         """
         Send a message over RabbitMQ. Setup RabbitMQ.
         """
         self._channel.basic_publish(
-            exchange='', routing_key='channel_1', body='Hello World!')
-        print(" [x] Sent 'Hello World !'")
+            exchange='', routing_key='channel_1', body=content)
+        print(f' [x] Sent "{content}"')
 
     def stop(self):
         """
@@ -44,12 +44,12 @@ class Reciever(threading.Thread):
         self._channel.queue_declare(queue='channel_1')
 
         def callback(ch, method, properties, body):
-            print(" [x] Received %r in channel_1" % body)
+            print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
 
         self._channel.basic_consume(
             queue='channel_1', on_message_callback=callback, auto_ack=True)
 
-        print('READY. To send "hello world" as a message, type "send". To exit type "exit".')
+        print('RabbitMQ READY.')
         self._channel.start_consuming()
 
     def stop(self):
@@ -72,13 +72,21 @@ class Messenger():
         self._reciever.start()
         self._sender.start()
 
-    def send(self):
-        self._sender.send()
+    def send(self, content):
+        """
+        Sends a message string content over RabbitMQ.
+        """
+        self._sender.send(content)
     
     def end_threads(self):
+        """
+        Closes the RabbitMQ threads.
+        """
         self._sender.stop()
         self._reciever.stop()
         
+
+
 
 
 def main():
@@ -87,6 +95,7 @@ def main():
     """
 
     messager = Messenger()
+    print('To send "hello world" as a message, type "send". To exit type "exit".')
 
     while True:
         time.sleep(0.6) # For testing: use so the processing threads have time to print
@@ -96,7 +105,7 @@ def main():
             break
 
         if line == "send":
-            messager.send()
+            messager.send("heyo worldo")
 
 
 if __name__ == '__main__':

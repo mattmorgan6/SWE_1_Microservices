@@ -2,6 +2,7 @@ from sys import argv
 import pandas as pd
 from tkinter import *
 from tkinter import ttk
+from messaging_service import Messenger
 
 
 headers = ["input_item_type", "input_item_category", "input_number_to_generate",
@@ -140,6 +141,7 @@ class GUI():
                 r.append(r_str)
 
             self.output_var.set(r)
+            messenger.send("hereo")
             return rdf
 
         def on_output_csv(*args):
@@ -149,6 +151,10 @@ class GUI():
             obj["input_item_category"] = self.categories_var.get()
             obj["input_number_to_generate"] = x.get()
             output_csv(rdf, obj)
+
+        # def end_messaging():
+        #     # messenger.end_threads()
+        #     root.destroy()  
 
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
         mainframe = ttk.Frame(root, padding="10 10 10 10")
@@ -190,11 +196,14 @@ class GUI():
 
         # Call on_generate() when enter is pressed.
         root.bind("<Return>", on_generate)
+        # root.protocol("WM_DELETE_WINDOW", end_messaging)
         root.mainloop()
 
 
 # Driver:
 print("Starting toy microservice...\n")
+
+messenger = Messenger()
 
 # get the dataframe and prep the data:
 df = pd.read_csv("amazon_co-ecommerce_sample.csv")
@@ -212,3 +221,5 @@ if input_file_name:
     csv_service()
 
 ui = GUI(categories, df)
+
+messenger.end_threads()
