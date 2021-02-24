@@ -3,6 +3,7 @@ import pika
 import sys
 import os
 import time
+import ContentGenerator
 
 # NOTE: Code from this file is shared by each group member. 
 # I recieved approval for it over email on 2/19. -Matthew Morgan
@@ -41,13 +42,17 @@ class Reciever(threading.Thread):
             pika.ConnectionParameters(host='localhost'))
         self._channel = connection.channel()
 
-        self._channel.queue_declare(queue='channel_1')
+        self._channel.queue_declare(queue='channel_2')
 
         def callback(ch, method, properties, body):
-            print(" [x] Received %r in channel_1" % body)
+            # try:
+            #     ContentGenerator.get_msg()
+            # except RuntimeError:
+            #     pass
+            print(" [x] Received %r in channel_2" % body)
 
         self._channel.basic_consume(
-            queue='channel_1', on_message_callback=callback, auto_ack=True)
+            queue='channel_2', on_message_callback=callback, auto_ack=True)
 
         print('READY. To send "hello world" as a message, type "send". To exit type "exit".')
         self._channel.start_consuming()
