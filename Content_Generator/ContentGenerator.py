@@ -5,7 +5,7 @@ import tkinter.scrolledtext as st
 import wikipedia as wiki
 import pika
 # import json
-import messaging_service
+import messaging_service as ms
 
 
 ##### FUNCTIONS ####
@@ -26,8 +26,7 @@ def generateResults(prim_key=None, secon_key=None) -> str:
     """
 
     # Clear text area if it is not empty
-    if text_area != "":
-        text_area.delete("1.0", "end")
+    text_area.delete("1.0", "end")
 
     # If no arguments are passed, that means the GUI is being used
     if prim_key is None and secon_key is None:
@@ -58,7 +57,7 @@ def generateResults(prim_key=None, secon_key=None) -> str:
 
 
 def insertText(body):
-    received_text_box.insert(END, body)
+    received_text_box.insert(INSERT, body)
 
 
 def findParagraph(primary_key: str, secondary_key: str, content: str) -> str:
@@ -122,16 +121,17 @@ def RabbitMq_send(data):
         pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
 
-    channel.queue_declare(queue='channel_1')
+    channel.queue_declare(queue='channel_2')
 
     # message = json.dumps(data)
 
-    channel.basic_publish(exchange='', routing_key='channel_1', body=data)
+    channel.basic_publish(exchange='', routing_key='channel_2', body=data)
     print(" [x] Sent %r " % data)
     connection.close()
 
 
 ########## TKinter Portion ##############
+
 root = Tk()
 root.title('Content Generator')
 root.geometry("800x533")
@@ -182,8 +182,7 @@ restartButton.place(x=758, y=491, width=43, height=36)
 
 
 if __name__ == "__main__":
-
-
+    
     # Checks if there is a file passed with the python file
     # if there is a file, it will parse the contents, gather the keyword results, and output an output.csv file.
 
@@ -229,5 +228,9 @@ if __name__ == "__main__":
         results = generateResults(first_keyword, second_keyword)
 
     else:
+        messenger = ms.Messenger()
         root.mainloop()
+        messenger.end_threads()
+        
+        
 

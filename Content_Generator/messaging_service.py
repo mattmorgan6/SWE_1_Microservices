@@ -3,7 +3,8 @@ import pika
 import sys
 import os
 import time
-import ContentGenerator
+# import ContentGenerator
+import json
 
 # NOTE: Code from this file is shared by each group member. 
 # I recieved approval for it over email on 2/19. -Matthew Morgan
@@ -16,14 +17,14 @@ class Sender(threading.Thread):
         self._connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
         self._channel = self._connection.channel()
-        self._channel.queue_declare(queue='channel_1')
+        self._channel.queue_declare(queue='channel_2')
 
     def send(self):
         """
         Send a message over RabbitMQ. Setup RabbitMQ.
         """
         self._channel.basic_publish(
-            exchange='', routing_key='channel_1', body='Hello World!')
+            exchange='', routing_key='channel_2', body='Hello World!')
         print(" [x] Sent 'Hello World !'")
 
     def stop(self):
@@ -31,7 +32,6 @@ class Sender(threading.Thread):
         Close the sender connection for RabbitMQ.
         """
         self._connection.close()
-
 
 class Reciever(threading.Thread):
     def run(self):
@@ -42,17 +42,20 @@ class Reciever(threading.Thread):
             pika.ConnectionParameters(host='localhost'))
         self._channel = connection.channel()
 
-        self._channel.queue_declare(queue='channel_2')
+        self._channel.queue_declare(queue='channel_1')
 
         def callback(ch, method, properties, body):
-            # try:
-            #     ContentGenerator.get_msg()
-            # except RuntimeError:
-            #     pass
-            print(" [x] Received %r in channel_2" % body)
+            print(" [x] Received %r in channel_1" % body)
+            # ContentGenerator.insertText(body)
+            # results = json.loads(body)
+            # item_name = results["name"].split(' ')
+            # pk = item_name[0]
+            # sk = item_name[1]
+            # rec = ContentGenerator.generateResults(pk, sk)
+            # print(rec)
 
         self._channel.basic_consume(
-            queue='channel_2', on_message_callback=callback, auto_ack=True)
+            queue='channel_1', on_message_callback=callback, auto_ack=True)
 
         print('READY. To send "hello world" as a message, type "send". To exit type "exit".')
         self._channel.start_consuming()
@@ -103,7 +106,7 @@ def main():
         if line == "send":
             messager.send()
 
-
+    
 if __name__ == '__main__':
     try:
         main()
