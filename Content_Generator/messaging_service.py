@@ -5,23 +5,26 @@ import os
 import time
 import json
 
-# NOTE: Code from this file is shared by each group member. 
+# NOTE: Code from this file is shared by each group member.
 # I recieved approval for it over email on 2/19. -Matthew Morgan
 
 recv_data = None
+
 
 def get_recv_data():
     """
     Returns the global variable recv_data
     """
     return recv_data
-    
+
+
 def clr_recv_data():
     """
     Sets the global variable recv_data to None to clear it. 
     """
     recv_data = None
     return recv_data
+
 
 class Sender(threading.Thread):
     def run(self):
@@ -47,6 +50,7 @@ class Sender(threading.Thread):
         """
         self._connection.close()
 
+
 class Reciever(threading.Thread):
     def run(self):
         """
@@ -61,15 +65,14 @@ class Reciever(threading.Thread):
         def callback(ch, method, properties, body):
             global recv_data
             print(" [x] Received %r in channel_1" % body)
-            # ContentGenerator.insertText(body)
             results = json.loads(body)
             recv_data = results["name"].split(' ')
-            
 
         self._channel.basic_consume(
             queue='channel_1', on_message_callback=callback, auto_ack=True)
 
-        print('READY. To send "hello world" as a message, type "send". To exit type "exit".')
+        print(
+            'READY. To send "hello world" as a message, type "send". To exit type "exit".')
         self._channel.start_consuming()
 
     def stop(self):
@@ -94,11 +97,11 @@ class Messenger():
 
     def send(self):
         self._sender.send()
-    
+
     def end_threads(self):
         self._sender.stop()
         self._reciever.stop()
-        
+
 
 def main():
     """
@@ -108,7 +111,8 @@ def main():
     messager = Messenger()
 
     while True:
-        time.sleep(0.6) # For testing: use so the processing threads have time to print
+        # For testing: use so the processing threads have time to print
+        time.sleep(0.6)
         line = input()
         if line == "exit":
             messager.end_threads()
@@ -116,7 +120,8 @@ def main():
 
         if line == "send":
             messager.send()
-    
+
+
 if __name__ == '__main__':
     try:
         main()

@@ -8,18 +8,15 @@ import messaging_service as ms
 
 ##### FUNCTIONS ####
 
+
 def generate_results(prim_key=None, secon_key=None) -> str:
     """
-    This function takes a primary key and a secondary key and search Wikipedia for a page title
-    that matches the primary key, and if found, will search the page's content for a paragraph
-    that contains both primary, and secondary key. Then returns the paragraph that contains
-    both keywords.
+    Searches for a Wikipedia page with the primary_key, finds a paragraph containing
+    both the primary_key and second_key, display results in the GUI, and return the
+    results. 
 
-    The function can be used two ways. Keywords can be passed into the function, or if keywords
-    are passed through the GUI, the function will get the keyword and use that instead.
-
-    :param prim_key: a str used to search wiki for a page title containing the prim_key
-    :param secon_key: a str used to search the prim_key wiki page for a the secon_key
+    :param prim_key: a str used for the main Wikipedia page. 
+    :param secon_key: a str used to find a paragraph containing both the primary and secondary keys
     :return: a string of content that contains both the primary and secondary keywords.
     """
 
@@ -41,11 +38,12 @@ def generate_results(prim_key=None, secon_key=None) -> str:
         text_area.insert(INSERT, err)
         return "Sorry, there was an Error!"
 
-    # Get the page contents of the primary key
     content = page.content
 
     # Search the page contents for a paragraph containing both primary and secondary keywords
     results = find_paragraph(primary_key, secondary_key, content)
+
+    # Send results to queue in channel_2
     rmq_send(results)
 
     # Display the results in the result text box
@@ -55,9 +53,13 @@ def generate_results(prim_key=None, secon_key=None) -> str:
 
 
 def insert_recv_data():
+    """
+    Retrive the consumed message from the queue.
+    """
+
     clear_all()
     data = ms.get_recv_data()
-    print(data)
+
     if data != None:
         pk = data[0]
         sk = data[1]
@@ -69,30 +71,31 @@ def insert_recv_data():
     else:
         received_text_box.insert(INSERT, "No data")
 
+
 def find_paragraph(primary_key: str, secondary_key: str, content: str) -> str:
     """
     Finds a paragraph containing both primary and secondary keywords.
 
-    :param primary_key: a string of the primary keyword
-    :param secondary_key: a string of the secondary keyword
-    :param content: a string of the paragraph found containing both keywords
+    :param primary_key: a str
+    :param secondary_key: a str
+    :param content: a str
     :return: a string of the paragraph.
     """
 
     # Split the primary keyword page by '\n' indicating a new paragraph
     content_by_newline = content.split('\n')
     found_indices = []
-    n = 0
-    # While loop to find paragraphs containing both keywords and saving the index in found_indices
-    while n < len(content_by_newline):
-        line_content = content_by_newline[n]
+    index = 0
+    # Find paragraphs containing both keywords and saving the index in found_indices
+    while index < len(content_by_newline):
+        line_content = content_by_newline[index]
         if (primary_key in line_content) and (secondary_key in line_content):
-            found_indices.append(n)
-            n += 1
+            found_indices.append(index)
+            index += 1
         else:
-            n += 1
+            index += 1
 
-    # found_indices array is empty then that means there does not exist a paragraph where both keywords were used.
+    # Empty variable length contains no matching content
     if len(found_indices) == 0:
         return "No results, sorry!"
 
@@ -101,7 +104,9 @@ def find_paragraph(primary_key: str, secondary_key: str, content: str) -> str:
 
 def clear_all():
     """
-    A function that clears the primary_keyword entry, secondary_keyword entry, and the results text box.
+    A function that clears the primary_keyword entry, 
+    secondary_keyword entry, the receiving text box,
+    and the results text box.
     :return: None
     """
     pk_entry.delete(0, END)
@@ -112,9 +117,10 @@ def clear_all():
 
 def export_results():
     """
-    A function that is used with the 'Export to CSV' button. It creates an output.csv file with the headers, primary,
+    A function that is used with the 'Export to CSV' button. 
+    It creates an output.csv file with the headers, primary,
     keyword, secondary keyword, and the results.
-    :return:
+    :return: None
     """
     primary_key = pk_entry.get()
     secondary_key = sk_entry.get()
@@ -125,7 +131,13 @@ def export_results():
         wf.write(header)
         wf.write(f'{primary_key};{secondary_key},"{content}"\n')
 
+
 def rmq_send(data):
+    """
+    Send data to the queue.
+    :param: data: a str
+    :return: None
+    """
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
@@ -154,16 +166,17 @@ receivingMessageIcon = PhotoImage(file='images/ReceivingMessage@2x.png')
 my_background = Label(root, image=bg)
 my_background.place(x=0, y=0, relwidth=1, relheight=1)
 
-# create an entry for primary keyword
+# create an entry box for primary keyword
 pk_entry = Entry(root, width=20)
 pk_entry.place(x=131, y=151, width=154, height=27)
 
-# create an entry for secondary keyword
+# create an entry box for secondary keyword
 sk_entry = Entry(root, width=20)
 sk_entry.place(x=131, y=224, width=154, height=31)
 
-# get recv data button
-get_recv_button = Button(root, text="Get Data", borderwidth=1, bg="red", command=insert_recv_data)
+# a button to show received data and display results
+get_recv_button = Button(root, text="Get Data",
+                         borderwidth=1, bg="red", command=insert_recv_data)
 get_recv_button.place(x=151, y=384.7, width=50, heigh=14)
 
 # text box for results with scrollbar
@@ -173,32 +186,34 @@ text_area.pack(padx=74, pady=200, side="right")
 
 # text box for Received with scrollbar
 received_text_box = st.ScrolledText(root, width=360, wrap='word', height=90, font=("Times New Roman", 12), bg="#DADEC5",
-                            borderwidth=0)
+                                    borderwidth=0)
 received_text_box.place(x=38, y=410, width=342, height=80)
 
 
-# ExportCSV button that exports the results into an output.csv file
-exportCsvButton = Button(root, image=exportCsvButtonIcon, borderwidth=1, bg="#66AFBE", command=export_results)
+# A button that exports the results into an output.csv file
+exportCsvButton = Button(root, image=exportCsvButtonIcon,
+                         borderwidth=1, bg="#66AFBE", command=export_results)
 exportCsvButton.place(x=518, y=488, width=148, height=34)
 
-# Generate Button uses the keywords to search wiki for a paragraph
-# containing both keywords and display it in the results box
-generateButton = Button(root, image=generateButtonIcon, borderwidth=1, bg="#BCD2D6", command=generate_results)
+# A button that activates the generate_results command and return results.
+generateButton = Button(root, image=generateButtonIcon,
+                        borderwidth=1, bg="#BCD2D6", command=generate_results)
 generateButton.place(x=154, y=292, width=109, height=34)
 
-# Start over button clears entry fields as well as results
-restartButton = Button(root, image=restartButtonIcon, borderwidth=1, bg="#66AFBE", command=clear_all)
+# Reset button clears entry fields as well as results
+restartButton = Button(root, image=restartButtonIcon,
+                       borderwidth=1, bg="#66AFBE", command=clear_all)
 restartButton.place(x=758, y=491, width=43, height=36)
 
 
 if __name__ == "__main__":
-    
+
     # Checks if there is a file passed with the python file
-    # if there is a file, it will parse the contents, gather the keyword results, and output an output.csv file.
+    # if there is a file, it will parse the contents,
+    # gather the keyword results, and output an output.csv file.
 
     if len(sys.argv) == 2:
 
-        # Save the filename
         filename = sys.argv[1]
 
         # Open the file split the content by lines into the variable content
@@ -217,18 +232,15 @@ if __name__ == "__main__":
                 # Split the keywords based on a semicolon
                 split_keyword = line.split(';')
 
-                # Pass the keywords into the get_results function and save it in the variable keyword_contents
-                keyword_contents = generate_results(split_keyword[0], split_keyword[1])
+                # Pass the keywords into the get_results function and save it in the variable
+                keyword_contents = generate_results(
+                    split_keyword[0], split_keyword[1])
 
-                # Then append the new line into new_content
+                # Append the new line into new_content
                 new_content.append(f'{line}, "{keyword_contents}\n"')
                 index += 1
 
-        # New_content variable has the new format of our output.csv file. We open to write a new file and
-        # write each line from new_content to output.csv file
-        # with open("output.csv", "w") as wf:
-        #     for each in new_content:
-        #         wf.write(each)
+       # Send the data to the messaging queue
         rmq_send(new_content)
 
     # Passing in keywords through the CLI
@@ -241,6 +253,3 @@ if __name__ == "__main__":
         messenger = ms.Messenger()
         root.mainloop()
         messenger.end_threads()
-        
-        
-
