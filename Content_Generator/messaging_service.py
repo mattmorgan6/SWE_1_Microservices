@@ -3,11 +3,25 @@ import pika
 import sys
 import os
 import time
-# import ContentGenerator
 import json
 
 # NOTE: Code from this file is shared by each group member. 
 # I recieved approval for it over email on 2/19. -Matthew Morgan
+
+recv_data = None
+
+def get_recv_data():
+    """
+    Returns the global variable recv_data
+    """
+    return recv_data
+    
+def clr_recv_data():
+    """
+    Sets the global variable recv_data to None to clear it. 
+    """
+    recv_data = None
+    return recv_data
 
 class Sender(threading.Thread):
     def run(self):
@@ -45,14 +59,12 @@ class Reciever(threading.Thread):
         self._channel.queue_declare(queue='channel_1')
 
         def callback(ch, method, properties, body):
+            global recv_data
             print(" [x] Received %r in channel_1" % body)
             # ContentGenerator.insertText(body)
-            # results = json.loads(body)
-            # item_name = results["name"].split(' ')
-            # pk = item_name[0]
-            # sk = item_name[1]
-            # rec = ContentGenerator.generateResults(pk, sk)
-            # print(rec)
+            results = json.loads(body)
+            recv_data = results["name"].split(' ')
+            
 
         self._channel.basic_consume(
             queue='channel_1', on_message_callback=callback, auto_ack=True)
@@ -88,7 +100,6 @@ class Messenger():
         self._reciever.stop()
         
 
-
 def main():
     """
     Use for testing out this Messenger class interface.
@@ -105,7 +116,6 @@ def main():
 
         if line == "send":
             messager.send()
-
     
 if __name__ == '__main__':
     try:

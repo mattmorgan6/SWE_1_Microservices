@@ -4,13 +4,11 @@ from tkinter import *
 import tkinter.scrolledtext as st
 import wikipedia as wiki
 import pika
-# import json
 import messaging_service as ms
-
 
 ##### FUNCTIONS ####
 
-def generateResults(prim_key=None, secon_key=None) -> str:
+def generate_results(prim_key=None, secon_key=None) -> str:
     """
     This function takes a primary key and a secondary key and search Wikipedia for a page title
     that matches the primary key, and if found, will search the page's content for a paragraph
@@ -47,8 +45,8 @@ def generateResults(prim_key=None, secon_key=None) -> str:
     content = page.content
 
     # Search the page contents for a paragraph containing both primary and secondary keywords
-    results = findParagraph(primary_key, secondary_key, content)
-    RabbitMq_send(results)
+    results = find_paragraph(primary_key, secondary_key, content)
+    rmq_send(results)
 
     # Display the results in the result text box
     text_area.insert(INSERT, results)
@@ -56,11 +54,22 @@ def generateResults(prim_key=None, secon_key=None) -> str:
     return results
 
 
-def insertText(body):
-    received_text_box.insert(INSERT, body)
+def insert_recv_data():
+    clear_all()
+    data = ms.get_recv_data()
+    print(data)
+    if data != None:
+        pk = data[0]
+        sk = data[1]
+        pk_entry.insert(0, pk)
+        sk_entry.insert(0, sk)
+        generate_results(pk, sk)
+        received_text_box.insert(INSERT, data)
+        ms.clr_recv_data()
+    else:
+        received_text_box.insert(INSERT, "No data")
 
-
-def findParagraph(primary_key: str, secondary_key: str, content: str) -> str:
+def find_paragraph(primary_key: str, secondary_key: str, content: str) -> str:
     """
     Finds a paragraph containing both primary and secondary keywords.
 
@@ -71,26 +80,26 @@ def findParagraph(primary_key: str, secondary_key: str, content: str) -> str:
     """
 
     # Split the primary keyword page by '\n' indicating a new paragraph
-    contentByNewLine = content.split('\n')
-    foundP_indices = []
+    content_by_newline = content.split('\n')
+    found_indices = []
     n = 0
-    # While loop to find paragraphs containing both keywords and saving the index in foundP_indices
-    while n < len(contentByNewLine):
-        lineContent = contentByNewLine[n]
-        if (primary_key in lineContent) and (secondary_key in lineContent):
-            foundP_indices.append(n)
+    # While loop to find paragraphs containing both keywords and saving the index in found_indices
+    while n < len(content_by_newline):
+        line_content = content_by_newline[n]
+        if (primary_key in line_content) and (secondary_key in line_content):
+            found_indices.append(n)
             n += 1
         else:
             n += 1
 
-    # foundP_indices array is empty then that means there does not exist a paragraph where both keywords were used.
-    if len(foundP_indices) == 0:
+    # found_indices array is empty then that means there does not exist a paragraph where both keywords were used.
+    if len(found_indices) == 0:
         return "No results, sorry!"
 
-    return contentByNewLine[foundP_indices[0]]
+    return content_by_newline[found_indices[0]]
 
 
-def clearAll():
+def clear_all():
     """
     A function that clears the primary_keyword entry, secondary_keyword entry, and the results text box.
     :return: None
@@ -101,7 +110,7 @@ def clearAll():
     received_text_box.delete("1.0", "end")
 
 
-def exportResults():
+def export_results():
     """
     A function that is used with the 'Export to CSV' button. It creates an output.csv file with the headers, primary,
     keyword, secondary keyword, and the results.
@@ -116,15 +125,12 @@ def exportResults():
         wf.write(header)
         wf.write(f'{primary_key};{secondary_key},"{content}"\n')
 
-def RabbitMq_send(data):
+def rmq_send(data):
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
 
     channel.queue_declare(queue='channel_2')
-
-    # message = json.dumps(data)
-
     channel.basic_publish(exchange='', routing_key='channel_2', body=data)
     print(" [x] Sent %r " % data)
     connection.close()
@@ -156,6 +162,10 @@ pk_entry.place(x=131, y=151, width=154, height=27)
 sk_entry = Entry(root, width=20)
 sk_entry.place(x=131, y=224, width=154, height=31)
 
+# get recv data button
+get_recv_button = Button(root, text="Get Data", borderwidth=1, bg="red", command=insert_recv_data)
+get_recv_button.place(x=151, y=384.7, width=50, heigh=14)
+
 # text box for results with scrollbar
 text_area = st.ScrolledText(root, width=31, wrap='word', height=90, font=("Times New Roman", 12), bg="#DADEC5",
                             borderwidth=0)
@@ -168,16 +178,16 @@ received_text_box.place(x=38, y=410, width=342, height=80)
 
 
 # ExportCSV button that exports the results into an output.csv file
-exportCsvButton = Button(root, image=exportCsvButtonIcon, borderwidth=1, bg="#66AFBE", command=exportResults)
+exportCsvButton = Button(root, image=exportCsvButtonIcon, borderwidth=1, bg="#66AFBE", command=export_results)
 exportCsvButton.place(x=518, y=488, width=148, height=34)
 
 # Generate Button uses the keywords to search wiki for a paragraph
 # containing both keywords and display it in the results box
-generateButton = Button(root, image=generateButtonIcon, borderwidth=1, bg="#BCD2D6", command=generateResults)
+generateButton = Button(root, image=generateButtonIcon, borderwidth=1, bg="#BCD2D6", command=generate_results)
 generateButton.place(x=154, y=292, width=109, height=34)
 
 # Start over button clears entry fields as well as results
-restartButton = Button(root, image=restartButtonIcon, borderwidth=1, bg="#66AFBE", command=clearAll)
+restartButton = Button(root, image=restartButtonIcon, borderwidth=1, bg="#66AFBE", command=clear_all)
 restartButton.place(x=758, y=491, width=43, height=36)
 
 
@@ -208,7 +218,7 @@ if __name__ == "__main__":
                 split_keyword = line.split(';')
 
                 # Pass the keywords into the get_results function and save it in the variable keyword_contents
-                keyword_contents = generateResults(split_keyword[0], split_keyword[1])
+                keyword_contents = generate_results(split_keyword[0], split_keyword[1])
 
                 # Then append the new line into new_content
                 new_content.append(f'{line}, "{keyword_contents}\n"')
@@ -219,13 +229,13 @@ if __name__ == "__main__":
         # with open("output.csv", "w") as wf:
         #     for each in new_content:
         #         wf.write(each)
-        RabbitMq_send(new_content)
+        rmq_send(new_content)
 
     # Passing in keywords through the CLI
     elif len(sys.argv) > 2:
         first_keyword = sys.argv[1]
         second_keyword = sys.argv[2]
-        results = generateResults(first_keyword, second_keyword)
+        results = generate_results(first_keyword, second_keyword)
 
     else:
         messenger = ms.Messenger()
