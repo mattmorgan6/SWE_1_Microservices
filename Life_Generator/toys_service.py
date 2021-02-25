@@ -163,11 +163,12 @@ class GUI():
 
         def on_toy_selection(param):
             # print(output_listbox.curselection())
+            self.wikiLabel_var.set("")
             obj = self.output_var_list[int(param[0])]
             messenger.send(json.dumps(obj))
 
         def on_recieve_wikipedia(ch, method, properties, body):
-            self.wikiLabel_var.set(f'{body.decode("UTF-8")[:50]}...')
+            self.wikiLabel_var.set(f'{body.decode("UTF-8")[:1000]}...')
 
 
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
@@ -206,8 +207,8 @@ class GUI():
         output_listbox.bind("<<ListboxSelect>>", lambda e: on_toy_selection(output_listbox.curselection()))
 
         # x is the number of items to generate.
-        self.wikiLabel_var = StringVar(value='Wikipedia Output Information goes here')
-        ttk.Label(mainframe, textvariable=self.wikiLabel_var).grid(column=0, row=4)
+        self.wikiLabel_var = StringVar(value="")
+        ttk.Label(mainframe, textvariable=self.wikiLabel_var, wraplength=500).grid(column=0, row=4, columnspan=4)
 
         # set the padding for each component to 5.
         for child in mainframe.winfo_children():
