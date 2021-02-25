@@ -166,6 +166,10 @@ class GUI():
             obj = self.output_var_list[int(param[0])]
             messenger.send(json.dumps(obj))
 
+        def on_recieve_wikipedia(ch, method, properties, body):
+            self.wikiLabel_var.set(f'{body.decode("UTF-8")[:50]}...')
+
+
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
         mainframe = ttk.Frame(root, padding="10 10 10 10")
         mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
@@ -201,9 +205,15 @@ class GUI():
         output_listbox.grid(column=0, row=3, columnspan=3)
         output_listbox.bind("<<ListboxSelect>>", lambda e: on_toy_selection(output_listbox.curselection()))
 
+        # x is the number of items to generate.
+        self.wikiLabel_var = StringVar(value='Wikipedia Output Information goes here')
+        ttk.Label(mainframe, textvariable=self.wikiLabel_var).grid(column=0, row=4)
+
         # set the padding for each component to 5.
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
+
+        messenger.set_on_receive(on_recieve_wikipedia)
 
         # Call on_generate() when enter is pressed.
         root.bind("<Return>", on_generate)
@@ -213,9 +223,7 @@ class GUI():
 
 # Driver:
 print("Starting toy microservice...\n")
-
-messenger = Messenger()
-
+    
 # get the dataframe and prep the data:
 df = pd.read_csv("amazon_co-ecommerce_sample.csv")
 df['number_of_reviews'] = (df['number_of_reviews'].str.replace(',', ''))
@@ -231,6 +239,14 @@ input_file_name = get_arguments()
 if input_file_name:
     csv_service()
 
+messenger = Messenger()
+
+# def printMessage(ch, method, properties, body):
+#     print(f' YOOOOOO "{body.decode("UTF-8")}" in channel_1')
+
+# messenger.set_on_receive(printMessage)
+
 ui = GUI(categories, df)
+
 
 messenger.end_threads()

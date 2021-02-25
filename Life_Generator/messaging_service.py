@@ -34,7 +34,7 @@ class Sender(threading.Thread):
 
 class Reciever(threading.Thread):
  
-    def set_on_recieve(self, callback_func):
+    def set_on_receive(self, callback_func):
         self._on_recieve = callback_func
 
     def run(self):
@@ -71,15 +71,15 @@ class Messenger():
         Starts the Sender and Reciever objects as threads.
         Once complete, RabbitMQ is ready.
         """
-        self._reciever = Reciever()
+        self._receiver = Reciever()
         self._sender = Sender()
 
         def printMessage(ch, method, properties, body):
             print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
 
-        self._reciever.set_on_recieve(printMessage)
+        self._receiver.set_on_receive(printMessage)
 
-        self._reciever.start()
+        self._receiver.start()
         self._sender.start()
 
     def send(self, content):
@@ -87,13 +87,18 @@ class Messenger():
         Sends a message string content over RabbitMQ.
         """
         self._sender.send(content)
+
+    def set_on_receive(self, function):
+        """
+        """
+        self._receiver.set_on_receive(function)
     
     def end_threads(self):
         """
         Closes the RabbitMQ threads.
         """
         self._sender.stop()
-        self._reciever.stop()
+        self._receiver.stop()
         
 
 
