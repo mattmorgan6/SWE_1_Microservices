@@ -4,8 +4,9 @@ import sys
 import os
 import time
 
-# NOTE: Code from this file is shared by each group member. 
+# NOTE: Code from this file is shared by each group member.
 # I recieved approval for it over email on 2/19. -Matthew Morgan
+
 
 class Sender(threading.Thread):
     def run(self):
@@ -33,7 +34,7 @@ class Sender(threading.Thread):
 
 
 class Reciever(threading.Thread):
- 
+
     def set_on_receive(self, callback_func):
         self._on_recieve = callback_func
 
@@ -92,14 +93,13 @@ class Messenger():
         """
         """
         self._receiver.set_on_receive(function)
-    
+
     def end_threads(self):
         """
         Closes the RabbitMQ threads.
         """
         self._sender.stop()
         self._receiver.stop()
-        
 
 
 def main():
@@ -111,7 +111,8 @@ def main():
     print('To send "hello world" as a message, type "send". To exit type "exit".')
 
     while True:
-        time.sleep(0.6) # For testing: use so the processing threads have time to print
+        # For testing: use so the processing threads have time to print
+        time.sleep(0.6)
         line = input()
         if line == "exit":
             messager.end_threads()

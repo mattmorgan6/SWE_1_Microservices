@@ -84,7 +84,7 @@ def algorithm(df, x, category):
 
 def output_csv(df, args):
     """
-    Outputs the top x toys to output.csv
+    Outputs the top x toys to output.csv where x = args["input_number_to_generate"]
     """
     with open('output.csv', 'w') as outfile:
         for header in headers[:-1]:
@@ -111,7 +111,7 @@ def csv_service():
         """
         obj = {}
         with open(file_name, "r") as infile:
-            line = infile.readline()  # discard headers
+            infile.readline()  # discard headers
             items = infile.readline().strip().split(',')
             for i in range(len(items)):
                 obj[headers[i]] = items[i]
@@ -162,7 +162,6 @@ class GUI():
         #     root.destroy()
 
         def on_toy_selection(param):
-            # print(output_listbox.curselection())
             self.wikiLabel_var.set("")
             obj = self.output_var_list[int(param[0])]
             messenger.send(json.dumps(obj))
@@ -170,7 +169,6 @@ class GUI():
         def on_recieve_wikipedia(ch, method, properties, body):
             self.wikiLabel_var.set(f'{body.decode("UTF-8")[:1000]}...')
             print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
-
 
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
         mainframe = ttk.Frame(root, padding="10 10 10 10")
@@ -205,11 +203,13 @@ class GUI():
         output_listbox = Listbox(
             mainframe, listvariable=self.output_var, width=74)
         output_listbox.grid(column=0, row=3, columnspan=3)
-        output_listbox.bind("<<ListboxSelect>>", lambda e: on_toy_selection(output_listbox.curselection()))
+        output_listbox.bind("<<ListboxSelect>>", lambda e: on_toy_selection(
+            output_listbox.curselection()))
 
         # x is the number of items to generate.
         self.wikiLabel_var = StringVar(value="")
-        ttk.Label(mainframe, textvariable=self.wikiLabel_var, wraplength=500).grid(column=0, row=4, columnspan=4)
+        ttk.Label(mainframe, textvariable=self.wikiLabel_var,
+                  wraplength=500).grid(column=0, row=4, columnspan=4)
 
         # set the padding for each component to 5.
         for child in mainframe.winfo_children():
@@ -219,13 +219,12 @@ class GUI():
 
         # Call on_generate() when enter is pressed.
         root.bind("<Return>", on_generate)
-        # root.protocol("WM_DELETE_WINDOW", end_messaging)
         root.mainloop()
 
 
 # Driver:
 print("Starting toy microservice...\n")
-    
+
 # get the dataframe and prep the data:
 df = pd.read_csv("amazon_co-ecommerce_sample.csv")
 df['number_of_reviews'] = (df['number_of_reviews'].str.replace(',', ''))
@@ -245,8 +244,6 @@ messenger = Messenger()
 
 # def printMessage(ch, method, properties, body):
 #     print(f' YOOOOOO "{body.decode("UTF-8")}" in channel_1')
-
-# messenger.set_on_receive(printMessage)
 
 ui = GUI(categories, df)
 
