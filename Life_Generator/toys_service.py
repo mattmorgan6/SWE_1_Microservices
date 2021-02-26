@@ -169,6 +169,7 @@ class GUI():
 
         def on_recieve_wikipedia(ch, method, properties, body):
             self.wikiLabel_var.set(f'{body.decode("UTF-8")[:1000]}...')
+            print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
 
 
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
