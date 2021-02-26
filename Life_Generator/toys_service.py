@@ -22,13 +22,13 @@ def get_arguments():
     return argv[1]
 
 
-def get_category_name(x):
+def get_category_name(categories):
     """
     Given a string category: ex. "Hobbies > Railway Sets > Rail > Trains"
     Returns the top level category: ex. "Hobbies"
     """
     try:
-        return x.split(' > ')[0]
+        return categories.split(' > ')[0]
     except:
         return ""
 
@@ -75,9 +75,9 @@ def algorithm(df, x, category):
     x *= 10
 
     rdf = ndf[:x].sort_values(
-        by="uniq_id", kind='mergesort')  # sort by uniq_id
+        by="uniq_id", kind='mergesort')
     rdf.sort_values(by="average_review_rating", ascending=False,
-                    kind='mergesort', inplace=True)  # sort by average_review_rating
+                    kind='mergesort', inplace=True) 
     rdf = rdf[:x]
     return rdf
 
@@ -126,54 +126,65 @@ def csv_service():
 
 class GUI():
 
-    def __init__(self, categories: list, df: pd.DataFrame):
-        root = Tk()
+    def create_frame(self, root):
         root.title("Life Generator")
-
-        def on_generate(*args):
-            """
-            Takes the top x toys and sets them to string output_var.
-            """
-            r = []
-            rdf = algorithm(df, x.get(), self.categories_var.get())
-
-            content = []
-            for i in range(min(x.get(), len(rdf.index))):
-                r_str = f'{rdf.iloc[i,1][:30]},   {rdf.iloc[i,7]},   {rdf.iloc[i,5]} reviews\n'
-                r.append(r_str)
-                content.append(
-                    {"name": rdf.iloc[i, 1], "manufacturer": rdf.iloc[i, 2]})
-
-            self.output_var.set(r)
-            self.output_var_list = content
-
-            return rdf
-
-        def on_output_csv(*args):
-            rdf = on_generate(args)
-            obj = {}
-            obj["input_item_type"] = "toys"
-            obj["input_item_category"] = self.categories_var.get()
-            obj["input_number_to_generate"] = x.get()
-            output_csv(rdf, obj)
-
-        # def end_messaging():
-        #     # messenger.end_threads()
-        #     root.destroy()
-
-        def on_toy_selection(param):
-            self.wikiLabel_var.set("")
-            obj = self.output_var_list[int(param[0])]
-            messenger.send(json.dumps(obj))
-
-        def on_recieve_wikipedia(ch, method, properties, body):
-            self.wikiLabel_var.set(f'{body.decode("UTF-8")[:1000]}...')
-            print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
 
         # mainframe is the GUI frame. Some of this code is from the tkinter docs.
         mainframe = ttk.Frame(root, padding="10 10 10 10")
         mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+        return mainframe
 
+    def on_generate(self, *args):
+        """
+        Takes the top x toys and sets them to string output_var.
+        """
+        r = []
+        rdf = algorithm(df, self._x.get(), self.categories_var.get())
+
+        content = []
+        for i in range(min(self._x.get(), len(rdf.index))):
+            r_str = f'{rdf.iloc[i,1][:30]},   {rdf.iloc[i,7]},   {rdf.iloc[i,5]} reviews\n'
+            r.append(r_str)
+            content.append(
+                {"name": rdf.iloc[i, 1], "manufacturer": rdf.iloc[i, 2]})
+
+        self.output_var.set(r)
+        self.output_var_list = content
+
+        return rdf
+
+    def on_output_csv(self, *args):
+        rdf = self.on_generate(args)
+        obj = {}
+        obj["input_item_type"] = "toys"
+        obj["input_item_category"] = self.categories_var.get()
+        obj["input_number_to_generate"] = self._x.get()
+        output_csv(rdf, obj)
+
+    def on_toy_selection(self, param):
+        self.wikiLabel_var.set("")
+        obj = self.output_var_list[int(param[0])]
+        messenger.send(json.dumps(obj))
+
+    
+    def initialize_buttons(self, mainframe):
+        # x is the number of items to generate.
+        ttk.Label(mainframe, text='Number of toys to output:').grid(
+            column=1, row=1)
+        self._x = IntVar(value=5)
+        x_entry = ttk.Entry(mainframe, width=4, textvariable=self._x)
+        x_entry.grid(column=2, row=1, sticky=(W, E))
+
+        # button calls on_generate() when pressed.
+        ttk.Button(mainframe, text="Get Output", command=self.on_generate).grid(
+            column=0, row=2, columnspan=2)
+
+        # button calls on_generate() when pressed.
+        ttk.Button(mainframe, text="Output to output.csv", command=self.on_output_csv).grid(
+            column=1, row=2, columnspan=2)
+
+
+    def initialize_components(self, mainframe):
         # category_menu is the list component of categories to choose from.
         self.categories_var = StringVar(value='')
         category_menu = ttk.OptionMenu(
@@ -181,44 +192,43 @@ class GUI():
             self.categories_var,
             categories[0],
             *categories)
-        category_menu.grid(column=0, row=1, sticky=W)
+        category_menu.grid(column=0, row=1, sticky=W)        
 
-        # x is the number of items to generate.
-        label = ttk.Label(mainframe, text='Number of toys to output:').grid(
-            column=1, row=1)
-        x = IntVar(value=5)
-        x_entry = ttk.Entry(mainframe, width=4, textvariable=x)
-        x_entry.grid(column=2, row=1, sticky=(W, E))
-
-        # button calls on_generate() when pressed.
-        ttk.Button(mainframe, text="Get Output", command=on_generate).grid(
-            column=0, row=2, columnspan=2)
-
-        # button calls on_generate() when pressed.
-        ttk.Button(mainframe, text="Output to output.csv", command=on_output_csv).grid(
-            column=1, row=2, columnspan=2)
+        self.initialize_buttons(mainframe)
 
         # output_listbox lists the output.
         self.output_var = StringVar(value=[])
         output_listbox = Listbox(
             mainframe, listvariable=self.output_var, width=74)
         output_listbox.grid(column=0, row=3, columnspan=3)
-        output_listbox.bind("<<ListboxSelect>>", lambda e: on_toy_selection(
+        output_listbox.bind("<<ListboxSelect>>", lambda e: self.on_toy_selection(
             output_listbox.curselection()))
 
         # x is the number of items to generate.
         self.wikiLabel_var = StringVar(value="")
         ttk.Label(mainframe, textvariable=self.wikiLabel_var,
-                  wraplength=500).grid(column=0, row=4, columnspan=4)
+                wraplength=500).grid(column=0, row=4, columnspan=4)
+
+
+    def __init__(self):
+        root = Tk()
+        
+        mainframe = self.create_frame(root)
+
+        self.initialize_components(mainframe)
 
         # set the padding for each component to 5.
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=5)
 
+        def on_recieve_wikipedia(ch, method, properties, body):
+            self.wikiLabel_var.set(f'{body.decode("UTF-8")[:1000]}...')
+            print(f' [x] Received "{body.decode("UTF-8")}" in channel_1')
+
         messenger.set_on_receive(on_recieve_wikipedia)
 
         # Call on_generate() when enter is pressed.
-        root.bind("<Return>", on_generate)
+        root.bind("<Return>", self.on_generate)
         root.mainloop()
 
 
@@ -242,10 +252,6 @@ if input_file_name:
 
 messenger = Messenger()
 
-# def printMessage(ch, method, properties, body):
-#     print(f' YOOOOOO "{body.decode("UTF-8")}" in channel_1')
-
-ui = GUI(categories, df)
-
+ui = GUI()
 
 messenger.end_threads()
