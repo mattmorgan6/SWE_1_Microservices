@@ -177,11 +177,16 @@ class GUI():
 
         # button calls on_generate() when pressed.
         ttk.Button(mainframe, text="Get Output", command=self.on_generate).grid(
-            column=0, row=2, columnspan=2)
+            column=0, row=2, columnspan=1)
 
         # button calls on_generate() when pressed.
         ttk.Button(mainframe, text="Output to output.csv", command=self.on_output_csv).grid(
             column=1, row=2, columnspan=2)
+
+        ttk.Label(mainframe, text='Get Output displays toys in the box below.').grid(
+            column=0, row=3)
+        ttk.Label(mainframe, text='Output to .csv creates an output.csv file.').grid(
+            column=1, row=3)
 
 
     def initialize_components(self, mainframe):
@@ -200,14 +205,14 @@ class GUI():
         self.output_var = StringVar(value=[])
         output_listbox = Listbox(
             mainframe, listvariable=self.output_var, width=74)
-        output_listbox.grid(column=0, row=3, columnspan=3)
+        output_listbox.grid(column=0, row=4, columnspan=3)
         output_listbox.bind("<<ListboxSelect>>", lambda e: self.on_toy_selection(
             output_listbox.curselection()))
 
         # x is the number of items to generate.
         self.wikiLabel_var = StringVar(value="")
         ttk.Label(mainframe, textvariable=self.wikiLabel_var,
-                wraplength=500).grid(column=0, row=4, columnspan=4)
+                wraplength=500).grid(column=0, row=5, columnspan=4)
 
 
     def __init__(self):
