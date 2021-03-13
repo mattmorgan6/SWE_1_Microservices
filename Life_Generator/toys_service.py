@@ -173,20 +173,26 @@ class GUI():
             column=1, row=1)
         self._x = IntVar(value=5)
         x_entry = ttk.Entry(mainframe, width=4, textvariable=self._x)
-        x_entry.grid(column=2, row=1, sticky=(W, E))
+        x_entry.grid(column=2, row=1, sticky=W)
+
+        ttk.Label(mainframe, text='Select a category ^').grid(
+            column=0, row=2)
+        
+        ttk.Label(mainframe, text=' ').grid(
+            column=0, row=3)
 
         # button calls on_generate() when pressed.
         ttk.Button(mainframe, text="Get Output", command=self.on_generate).grid(
-            column=0, row=2, columnspan=1)
+            column=0, row=4, columnspan=1)
 
         # button calls on_generate() when pressed.
         ttk.Button(mainframe, text="Output to output.csv", command=self.on_output_csv).grid(
-            column=1, row=2, columnspan=2)
+            column=1, row=4, columnspan=2)
 
-        ttk.Label(mainframe, text='Get Output displays toys in the box below.').grid(
-            column=0, row=3)
-        ttk.Label(mainframe, text='Output to .csv creates an output.csv file.').grid(
-            column=1, row=3)
+        ttk.Label(mainframe, text='Display toys in the box below.').grid(
+            column=0, row=5)
+        ttk.Label(mainframe, text='Create an output.csv file with toys.').grid(
+            column=1, row=5)
 
 
     def initialize_components(self, mainframe):
@@ -197,7 +203,7 @@ class GUI():
             self.categories_var,
             categories[0],
             *categories)
-        category_menu.grid(column=0, row=1, sticky=W)        
+        category_menu.grid(column=0, row=1)        
 
         self.initialize_buttons(mainframe)
 
@@ -205,14 +211,14 @@ class GUI():
         self.output_var = StringVar(value=[])
         output_listbox = Listbox(
             mainframe, listvariable=self.output_var, width=74)
-        output_listbox.grid(column=0, row=4, columnspan=3)
+        output_listbox.grid(column=0, row=6, columnspan=3)
         output_listbox.bind("<<ListboxSelect>>", lambda e: self.on_toy_selection(
             output_listbox.curselection()))
 
-        # x is the number of items to generate.
+        # this is the wikipedia label
         self.wikiLabel_var = StringVar(value="")
         ttk.Label(mainframe, textvariable=self.wikiLabel_var,
-                wraplength=500).grid(column=0, row=5, columnspan=4)
+                wraplength=500).grid(column=0, row=7, columnspan=4)
 
 
     def __init__(self):
