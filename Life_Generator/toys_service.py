@@ -175,12 +175,6 @@ class GUI():
         x_entry = ttk.Entry(mainframe, width=4, textvariable=self._x)
         x_entry.grid(column=2, row=1, sticky=W)
 
-        ttk.Label(mainframe, text='Select a category ^').grid(
-            column=0, row=2)
-        
-        ttk.Label(mainframe, text=' ').grid(
-            column=0, row=3)
-
         # button calls on_generate() when pressed.
         ttk.Button(mainframe, text="Get Output", command=self.on_generate).grid(
             column=0, row=4, columnspan=1)
@@ -189,11 +183,15 @@ class GUI():
         ttk.Button(mainframe, text="Output to output.csv", command=self.on_output_csv).grid(
             column=1, row=4, columnspan=2)
 
+    def initialize_labels(self, mainframe):
+        ttk.Label(mainframe, text='Select a category ^').grid(
+            column=0, row=2)
+        ttk.Label(mainframe, text=' ').grid(
+            column=0, row=3)
         ttk.Label(mainframe, text='Display toys in the box below.').grid(
             column=0, row=5)
         ttk.Label(mainframe, text='Create an output.csv file with toys.').grid(
             column=1, row=5)
-
 
     def initialize_components(self, mainframe):
         # category_menu is the list component of categories to choose from.
@@ -206,6 +204,7 @@ class GUI():
         category_menu.grid(column=0, row=1)        
 
         self.initialize_buttons(mainframe)
+        self.initialize_labels(mainframe)
 
         # output_listbox lists the output.
         self.output_var = StringVar(value=[])
